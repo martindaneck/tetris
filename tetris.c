@@ -26,18 +26,19 @@ int CELL_SIZE = 30; // HEIGHT/20
 int SPEED = 40;
 
 Color a = {94, 216, 125, 255}; // color 1
-Color b = {72, 211, 176, 0xFF}; // color 2
-Color c = {91, 184, 215, 0xFF}; // color 3
-Color d = {49, 87, 202, 0xFF}; // color 4
-Color e = {147, 121, 223, 0xFF}; // color 5
-Color f = {168, 54, 206, 0xFF}; // color 6
-Color g = {215, 90, 184, 0xFF}; // color 7
+Color b = {72, 211, 176, 255}; // color 2
+Color c = {91, 184, 215, 255}; // color 3
+Color d = {49, 87, 202, 255}; // color 4
+Color e = {147, 121, 223, 255}; // color 5
+Color f = {168, 54, 206, 255}; // color 6
+Color g = {215, 90, 184, 255}; // color 7
 
 Color x = {0xD0, 0xD0, 0xD0, 0xFF}; // light gray
 Color y = {0x80, 0x80, 0x80, 0xFF}; // gray
 Color z = {0x10, 0x10, 0x10, 0xFF}; // dark gray
 
 int frame_counter = 0;
+int s_pressed_counter = 1;
 int ret; // logic value
 int removed = 0;
 
@@ -75,36 +76,39 @@ int main() {
 
     while(!WindowShouldClose()) {
         // app logic
-        float dt = GetFrameTime();
         frame_counter++;
-        // here update all the tetris logic
+        // tetris logic
         // INPUT
-        char move_dir = ' ';
-        char rot_dir = ' ';
+        char apressed = IsKeyPressed(KEY_A);
+        char dpressed = IsKeyPressed(KEY_D);
+        if (IsKeyDown(KEY_S)) 
+            s_pressed_counter++;
+        char qpressed = IsKeyPressed(KEY_Q);
+        char epressed = IsKeyPressed(KEY_E);
 
-        char keycode = GetCharPressed();
-        switch (keycode) {
-            case 's': move_dir = 'd'; break;
-            case 'a': move_dir = 'l'; break;
-            case 'd': move_dir = 'r'; break;
-            case 'q': rot_dir = 'a'; break;
-            case 'e': rot_dir = 'c'; break;
-            default: break;
-        }
-        //printf("keycode: %c\n", keycode);
-        
-        // FALLING LOGIC
-        if (frame_counter % SPEED == 0)
+        if (qpressed) 
+            rotate_tetromino(&active_tetromino, 'a', board);
+        if (epressed) 
+            rotate_tetromino(&active_tetromino, 'c', board);
+
+        if (apressed) 
+            ret = move_tetromino(&active_tetromino, 'l', board);
+        if (dpressed) 
+            ret = move_tetromino(&active_tetromino, 'r', board);
+        if (s_pressed_counter % 4 == 0) {
             ret = move_tetromino(&active_tetromino, 'd', board);
+            s_pressed_counter = 1;
+        }
+        
         if (ret == 2) {
             write_tetromino(active_tetromino, board);
             active_tetromino = generate_tetromino();
             ret = 0;
         }
-        // PLAYER INPUT LOGIC
-        ret = move_tetromino(&active_tetromino, move_dir, board);
-        rotate_tetromino(&active_tetromino, rot_dir, board);
         
+        // FALLING LOGIC
+        if (frame_counter % SPEED == 0)
+            ret = move_tetromino(&active_tetromino, 'd', board);
         if (ret == 2) {
             write_tetromino(active_tetromino, board);
             active_tetromino = generate_tetromino();
@@ -278,7 +282,7 @@ void write_tetromino(struct Tetromino tetromino, char (*board)[30][10]){
 struct Tetromino generate_tetromino(){
     struct Tetromino tetromino;
     int r = rand() % 7;
-    struct Tile start_tile = {5, 15, ' '}; // This is the initial position of the tetromino
+    struct Tile start_tile = {5, 20, ' '}; // This is the initial position of the tetromino
     switch (r) {
         case 0: // T
             start_tile.colorid = 'a';
@@ -306,14 +310,14 @@ struct Tetromino generate_tetromino(){
             tetromino.tiles[0] = start_tile;
             tetromino.tiles[1] = (struct Tile){start_tile.posx-1, start_tile.posy, 'd'};
             tetromino.tiles[2] = (struct Tile){start_tile.posx+1, start_tile.posy, 'd'};
-            tetromino.tiles[3] = (struct Tile){start_tile.posx+2, start_tile.posy, 'd'};
+            tetromino.tiles[3] = (struct Tile){start_tile.posx-2, start_tile.posy, 'd'};
             break;
         case 4: // O
             start_tile.colorid = 'e';
             tetromino.tiles[0] = start_tile;
-            tetromino.tiles[1] = (struct Tile){start_tile.posx+1, start_tile.posy, 'e'};
+            tetromino.tiles[1] = (struct Tile){start_tile.posx-1, start_tile.posy, 'e'};
             tetromino.tiles[2] = (struct Tile){start_tile.posx, start_tile.posy+1, 'e'};
-            tetromino.tiles[3] = (struct Tile){start_tile.posx+1, start_tile.posy+1, 'e'};
+            tetromino.tiles[3] = (struct Tile){start_tile.posx-1, start_tile.posy+1, 'e'};
             break;
         case 5: // Z
             start_tile.colorid = 'f';
