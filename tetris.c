@@ -79,14 +79,16 @@ int main() {
         frame_counter++;
         // here update all the tetris logic
         // INPUT
-        char dir = ' ';
+        char move_dir = ' ';
+        char rot_dir = ' ';
+
         char keycode = GetCharPressed();
         switch (keycode) {
-            case 's': dir = 'd'; break;
-            case 'a': dir = 'l'; break;
-            case 'd': dir = 'r'; break;
-            case 'q': dir = 'a'; break;
-            case 'e': dir = 'c'; break;
+            case 's': move_dir = 'd'; break;
+            case 'a': move_dir = 'l'; break;
+            case 'd': move_dir = 'r'; break;
+            case 'q': rot_dir = 'a'; break;
+            case 'e': rot_dir = 'c'; break;
             default: break;
         }
         //printf("keycode: %c\n", keycode);
@@ -100,11 +102,9 @@ int main() {
             ret = 0;
         }
         // PLAYER INPUT LOGIC
-        if (dir == 'd' || dir == 'r' || dir == 'l')
-            ret = move_tetromino(&active_tetromino, dir, board);
-        else if (dir == 'c' || dir == 'a') // rotate
-            rotate_tetromino(&active_tetromino, dir, board);
-        //ret?printf("ret: %d\n", ret):0;
+        ret = move_tetromino(&active_tetromino, move_dir, board);
+        rotate_tetromino(&active_tetromino, rot_dir, board);
+        
         if (ret == 2) {
             write_tetromino(active_tetromino, board);
             active_tetromino = generate_tetromino();
@@ -241,21 +241,27 @@ int move_tetromino(struct Tetromino *tetromino, char dir, char (*board)[30][10])
 
     // check if the tetromino is colliding with another tile
     for (int i = 0; i < 4; i++) {
-        int newx = tetromino->tiles[i].posx;
-        int newy = tetromino->tiles[i].posy - 1;
+        int newy, newx;
 
-        // check if another tile of same piece is there
-        int self = 0;
-        for (int j = 0; j < 4; j++) {
-            if (tetromino->tiles[j].posx == newx &&
-                tetromino->tiles[j].posy == newy) {
-                self = 1;
-                break;
-            }
+        if (dir == 'd') {
+            newy = tetromino->tiles[i].posy - 1;
+            newx = tetromino->tiles[i].posx;
+        } else if (dir == 'r') {
+            newy = tetromino->tiles[i].posy;
+            newx = tetromino->tiles[i].posx + 1;
+        } else {
+            newy = tetromino->tiles[i].posy;
+            newx = tetromino->tiles[i].posx - 1;
         }
 
-        if (!self && (*board)[newy][newx] != ' ')
-            return 2;
+
+        int ret;
+        if ((*board)[newy][newx] != ' ') {
+            ret = dir == 'd' ? 2 : 1; // if something is below and we move down, we write to board
+            return ret;
+        }
+        
+        
     }
     // nothing failed, move the tetromino
     for (int i = 0; i < 4; i++)            
@@ -272,7 +278,7 @@ void write_tetromino(struct Tetromino tetromino, char (*board)[30][10]){
 struct Tetromino generate_tetromino(){
     struct Tetromino tetromino;
     int r = rand() % 7;
-    struct Tile start_tile = {5, 20, ' '}; // This is the initial position of the tetromino
+    struct Tile start_tile = {5, 15, ' '}; // This is the initial position of the tetromino
     switch (r) {
         case 0: // T
             start_tile.colorid = 'a';
@@ -358,26 +364,16 @@ void rotate_tetromino(struct Tetromino *tetromino, char dir, char (*board)[30][1
         newy[i] = py + ry;
     }
 
-    // check bounds + collisions BEFORE applying
+    // check bounds + collisions
     for (int i = 0; i < 4; i++) {
         // out of bounds
         if (newx[i] < 0 || newx[i] > 9 || newy[i] < 0 || newy[i] > 29)
             return;
 
         // check collision with board
-        if ((*board)[newy[i]][newx[i]] != ' ') {
-            // allow overlap with itself
-            int overlap = 0;
-            for (int j = 0; j < 4; j++) {
-                if (tetromino->tiles[j].posx == newx[i] &&
-                    tetromino->tiles[j].posy == newy[i]) {
-                    overlap = 1;
-                    break;
-                }
-            }
-            if (!overlap)
-                return;
-        }
+        if ((*board)[newy[i]][newx[i]] != ' ') 
+            return;
+        
     }
 
     // apply rotation
