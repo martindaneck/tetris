@@ -73,6 +73,7 @@ int main() {
     srand(time(NULL));
 
     struct Tetromino active_tetromino = generate_tetromino();
+    struct Tetromino next_tetromino = generate_tetromino();
 
     while(!WindowShouldClose()) {
         // app logic
@@ -102,7 +103,8 @@ int main() {
         
         if (ret == 2) {
             write_tetromino(active_tetromino, board);
-            active_tetromino = generate_tetromino();
+            active_tetromino = next_tetromino;
+            next_tetromino = generate_tetromino();
             ret = 0;
         }
         
@@ -111,7 +113,8 @@ int main() {
             ret = move_tetromino(&active_tetromino, 'd', board);
         if (ret == 2) {
             write_tetromino(active_tetromino, board);
-            active_tetromino = generate_tetromino();
+            active_tetromino = next_tetromino;
+            next_tetromino = generate_tetromino();
             ret = 0;
         }
 
@@ -143,8 +146,19 @@ int main() {
 
         draw_board(board);
 
-        DrawText(TextFormat("Score: %d", score), WIDTH * 0.75, HEIGHT *0.40, 30, WHITE);
-        DrawText(TextFormat("Level: %d", level), WIDTH * 0.75, HEIGHT *0.50, 30, WHITE);
+        DrawText(TextFormat("Score: %d", score), WIDTH * 0.025, HEIGHT *0.40, 30, WHITE);
+        DrawText(TextFormat("Level: %d", level), WIDTH * 0.025, HEIGHT *0.50, 30, WHITE);
+
+        DrawText("Next:", WIDTH * 0.80, HEIGHT *0.10, 30, WHITE);
+        for (int i = 0; i < 4; i++) {
+            next_tetromino.tiles[i].posx += 9;
+            next_tetromino.tiles[i].posy -= 6;
+        }
+        draw_tetromino(next_tetromino);
+        for (int i = 0; i < 4; i++) {
+            next_tetromino.tiles[i].posx -= 9;
+            next_tetromino.tiles[i].posy += 6;
+        }
         
         draw_tetromino(active_tetromino);
 
